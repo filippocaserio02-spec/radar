@@ -1,6 +1,6 @@
 """RADAR collector — fetches funding news from free public sources.
 
-Component 1: EU-Startups funding RSS feed.
+Sources: EU-Startups, BeBeez, Crunchbase News, Google News (IT/FR/DE/ES).
 Stdlib only (no dependencies), so it runs anywhere — including GitHub Actions.
 
 New items are appended to data/intake.csv, deduplicated by URL.
@@ -13,16 +13,51 @@ import html
 import re
 import ssl
 import sys
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
+def google_news(query: str, lang: str, country: str) -> str:
+    # when:30d window overlaps between weekly runs on purpose: combined with
+    # URL dedupe, a skipped week loses nothing
+    return (
+        "https://news.google.com/rss/search?"
+        f"q={urllib.parse.quote(query + ' when:30d')}"
+        f"&hl={lang}&gl={country}&ceid={country}:{lang}"
+    )
+
+
 SOURCES = [
     {
         "name": "eu-startups-funding",
         "url": "https://www.eu-startups.com/category/fundin/feed/",
+    },
+    {
+        "name": "bebeez-venture-capital",
+        "url": "https://bebeez.it/category/venture-capital/feed/",
+    },
+    {
+        "name": "crunchbase-news",
+        "url": "https://news.crunchbase.com/feed/",
+    },
+    {
+        "name": "google-news-it",
+        "url": google_news('"round di finanziamento"', "it", "IT"),
+    },
+    {
+        "name": "google-news-fr",
+        "url": google_news('"levée de fonds"', "fr", "FR"),
+    },
+    {
+        "name": "google-news-de",
+        "url": google_news('"Finanzierungsrunde"', "de", "DE"),
+    },
+    {
+        "name": "google-news-es",
+        "url": google_news('"ronda de financiación"', "es", "ES"),
     },
 ]
 
