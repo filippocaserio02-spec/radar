@@ -23,7 +23,7 @@ Crunchbase News, Growjo     weights) → database                shortlist, memo
 | Component | Status |
 |---|---|
 | Collector: EU-Startups funding RSS | ✅ |
-| Collector: BeBeez, Google News (IT/EN/FR/DE/ES), Crunchbase News | planned |
+| Collector: BeBeez, Google News (IT/FR/DE/ES), Crunchbase News | ✅ |
 | Collector: Growjo growth estimates | planned |
 | Scoring v1 in script | planned |
 | Google Sheets database connection | planned |
