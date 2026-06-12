@@ -25,7 +25,7 @@ Crunchbase News, Growjo     weights) → database                shortlist, memo
 | Collector: EU-Startups funding RSS | ✅ |
 | Collector: BeBeez, Google News (IT/FR/DE/ES + EN/NL/SV/PL), Crunchbase News | ✅ |
 | Collector: Growjo growth estimates | ✗ dropped — Cloudflare blocks non-browser clients; Growjo is now a manual source in the weekly session, with annual structured lists (FT 1000, LinkedIn Top Startups) as the non-news counterweight |
-| Scoring v1 in script | planned |
+| Processor: classification, extraction, filters + scoring v1 (`process.py`) | ✅ |
 | Google Sheets database connection | planned |
 | GitHub Actions weekly schedule | planned |
 | 2024-2025 funding rounds backfill | planned |
@@ -33,7 +33,12 @@ Crunchbase News, Growjo     weights) → database                shortlist, memo
 ## Run
 
 ```bash
-python3 collect.py        # stdlib only, no dependencies
+python3 collect.py        # fetch news -> data/intake.csv
+python3 process.py        # classify, extract, score -> data/companies.csv
 ```
 
-New items are appended to `data/intake.csv`, deduplicated by URL **and** by normalized title (Google News rotates its encoded redirect URLs, and the same story can arrive from two different feeds). The run fails if any single source fails: a feed that stays silently broken longer than the 14-day query window loses data for good.
+Both are stdlib only, no dependencies.
+
+`collect.py` appends new items to `data/intake.csv`, deduplicated by URL **and** by normalized title (Google News rotates its encoded redirect URLs, and the same story can arrive from two different feeds). The run fails if any single source fails: a feed that stays silently broken longer than the 14-day query window loses data for good.
+
+`process.py` maintains `data/companies.csv` (one row per company, rescored on every run — the clock signal moves even without news). Uncertain extractions land in a review queue for the weekly session instead of being silently dropped or guessed; exclusions (megarounds >€100M, M&A, fund closings, crypto, non-European companies) are logged with reasons to `data/excluded.csv`. Analyst-owned columns (headcount history, key job postings, investor quality…) are filled manually during weekly sessions and survive reruns.
