@@ -1,0 +1,55 @@
+name: Weekly RADAR run
+
+# Runs the whole pipeline every Monday and commits the refreshed database back,
+# so the repo's commit history doubles as the proof of continuity. Also runnable
+# on demand (workflow_dispatch) for testing.
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays, 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write # the job commits the updated data/*.csv back to the repo
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Write service account key
+        # printf '%s' keeps the JSON byte-for-byte (no backslash interpretation)
+        run: printf '%s' "$GOOGLE_SERVICE_ACCOUNT" > service-account.json
+        env:
+          GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+
+      - name: Collect news
+        run: python3 collect.py
+
+      - name: Pull manual edits from the Sheet
+        run: python3 sync_sheets.py pull
+
+      - name: Process and score
+        run: python3 process.py
+
+      - name: Push refreshed database to the Sheet
+        run: python3 sync_sheets.py push
+
+      - name: Commit the updated database
+        run: |
+          git config user.name "radar-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/*.csv
+          git diff --staged --quiet || git commit -m "Weekly run: $(date -u +%Y-%m-%d)"
+          git push
+
+      - name: Remove the key
+        if: always() # delete the secret file even if a step above failed
+        run: rm -f service-account.json
