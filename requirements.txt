@@ -1,0 +1,5 @@
+# Only sync_sheets.py and the GitHub Action need these.
+# The collectors (collect.py, backfill.py) and the processor (process.py)
+# are stdlib-only and need nothing here.
+gspread>=6.2
+google-auth>=2.30
