@@ -26,18 +26,20 @@ Crunchbase News, Growjo     weights) → database                shortlist, memo
 | Collector: BeBeez, Google News (IT/FR/DE/ES + EN/NL/SV/PL), Crunchbase News | ✅ |
 | Collector: Growjo growth estimates | ✗ dropped — Cloudflare blocks non-browser clients; Growjo is now a manual source in the weekly session, with annual structured lists (FT 1000, LinkedIn Top Startups) as the non-news counterweight |
 | Processor: classification, extraction, filters + scoring v1 (`process.py`) | ✅ |
-| Google Sheets database connection | planned |
+| 2024-2025 funding rounds backfill (`backfill.py`) | ✅ |
+| Google Sheets database connection, bidirectional (`sync_sheets.py`) | ✅ |
 | GitHub Actions weekly schedule | planned |
-| 2024-2025 funding rounds backfill | planned |
 
 ## Run
 
 ```bash
-python3 collect.py        # fetch news -> data/intake.csv
-python3 process.py        # classify, extract, score -> data/companies.csv
+python3 collect.py            # fetch news -> data/intake.csv
+python3 sync_sheets.py pull    # pull analyst's manual edits from the Sheet -> companies.csv
+python3 process.py            # classify, extract, score -> data/companies.csv
+python3 sync_sheets.py push    # rewrite the Google Sheet from companies.csv
 ```
 
-Both are stdlib only, no dependencies.
+`collect.py` and `process.py` are stdlib only. `sync_sheets.py` needs `gspread` and `google-auth` (`pip install -r requirements.txt`) and a Google service account (`service-account.json`, gitignored). The one-time `backfill.py` pages back through the EU-Startups and BeBeez archives to seed the 12-24 month golden window — run once, never weekly.
 
 `collect.py` appends new items to `data/intake.csv`, deduplicated by URL **and** by normalized title (Google News rotates its encoded redirect URLs, and the same story can arrive from two different feeds). The run fails if any single source fails: a feed that stays silently broken longer than the 14-day query window loses data for good.
 
